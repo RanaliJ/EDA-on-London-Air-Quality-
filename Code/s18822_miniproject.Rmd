@@ -1,0 +1,418 @@
+---
+title: "mini project_s18822"
+output: html_document
+date: "2024-01-27"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+library(skimr)
+library(janitor)
+library(zoo)
+library(VIM)
+library(imputeTS)
+library(corrplot)
+library(RColorBrewer)
+library(gridExtra)
+```
+
+```{r}
+london_air_data<-read_csv("../Data/london_local_data_2022.csv")
+```
+```{r}
+london_local_sites<-read_csv("../Data/london_local_sites.csv")
+```
+```{r}
+london_local_sites %>% filter(Parameter_name=="Ozone") %>% distinct(code)
+london_local_sites %>% filter(Parameter_name=="Nitrogen dioxide") %>% distinct(code)
+london_local_sites %>% filter(Parameter_name=="PM10 particulate matter (Hourly measured)") %>% distinct(code)
+
+
+```
+```{r}
+london_air_data %>% distinct(code,site)
+```
+the data set has 34 sites
+```{r}
+sum(duplicated(london_air_data_new))
+```
+```{r}
+london_air_data %>% filter(!is.na(no)) %>% distinct(code)
+london_air_data %>% filter(!is.na(no2)) %>% distinct(code)
+london_air_data %>% filter(!is.na(nox)) %>% distinct(code)
+```
+
+
+
+
+
+```{r}
+london_air_data_new<-london_air_data %>% 
+  mutate(dateNew=as.Date(date),time=format(as.POSIXct(date),format="%H:%M:%S"))
+```
+
+```{r}
+merge_dataset<-merge(london_air_data_new,london_local_sites,by="code")
+```
+
+
+
+```{r}
+glimpse(london_air_data_new)
+```
+```{r}
+colSums(is.na(london_air_data_new))
+```
+```{r}
+aggr(london_air_data_new)
+```
+```{r}
+london_air_data_new1 <- london_air_data_new
+```
+
+```{r}
+london_air_data_new1 <- lapply(london_air_data_new1, function(x) if (is.numeric(x)) na.approx(x) else x)
+london_air_data_new1<-as.data.frame(london_air_data_new1)
+#london_air_data_new1 <- london_air_data_new1 %>%
+#  mutate_all(~ifelse(is.numeric(.), na.approx(.), .))
+
+colSums(is.na(london_air_data_new1))
+
+```
+```{r}
+str(london_air_data_new1)
+```
+```{r}
+london_air_data_new1$date=as.POSIXct(london_air_data_new1$date)
+london_air_data_new1$dateNew=as.POSIXct(london_air_data_new1$dateNew)
+```
+
+
+
+```{r}
+london_air_data_new %>% filter(is.na(no2)) %>% distinct(code)
+```
+```{r}
+london_air_data_new %>% group_by(date) %>% summarise(avg_hrly=mean(no2,na.rm=T))
+```
+plots
+considering time
+NO.NOx,No2
+
+plot 1-
+
+```{r}
+data2<-london_air_data_new %>% 
+  group_by(dateNew) %>% 
+  summarise(avg_no=mean(no,na.rm=T),
+            avg_nox=mean(nox,na.rm = T),
+            avg_no2=mean(no2,na.rm=T))
+```
+
+```{r}
+plot_no<-data2 %>% ggplot(aes(x=dateNew,y=avg_no))+geom_line(color="dark green")+labs(x="Date",y="average No concentration",subtitle = "average NO values throughout the year")+theme_minimal()
+plot_no
+```
+```{r}
+data2 %>% filter(avg_no==max(avg_no,na.rm = T)) %>% 
+  select(dateNew)
+```
+```{r}
+data2 %>% arrange(desc(avg_no)) %>%
+  select(dateNew,avg_no) %>% head(10)
+```
+
+plot2:nOx
+```{r}
+plot_nox<-data2 %>% ggplot(aes(x=dateNew,y=avg_nox))+geom_line()+labs(x="Date",y="average NOx concentration",subtitle = "average NOx values throughout the year")+theme_minimal()
+plot_nox
+```
+```{r}
+data2 %>% filter(avg_nox==max(avg_nox,na.rm = T)) %>% 
+  select(dateNew)
+```
+
+plot3:NO2
+```{r}
+plot_no2<-data2 %>% ggplot(aes(x=dateNew,y=avg_no2))+geom_line(color="dark green")+labs(x="Date",y="average NO2 concentration",subtitle = "average NO2 values throughout the year")+theme_minimal()
+plot_no2
+```
+```{r}
+data2 %>% filter(avg_no2==max(avg_no2,na.rm = T)) %>% 
+  select(dateNew)
+```
+```{r}
+data2 %>% arrange(desc(avg_no2)) %>%
+  select(dateNew,avg_no2) %>% 
+  head(10)
+```
+
+
+pm2-5 plot
+```{r}
+pm2_5_data<-london_air_data_new %>%group_by(code) %>% 
+  filter(code =="HK6") %>% select(code,date,pm2_5,dateNew,time)
+pm2_5_data
+```
+data imputaion for pm25 data in code HK6
+```{r}
+aggr(pm2_5_data)
+sum(is.na(pm2_5_data$pm2_5))
+```
+```{r}
+pm2_5_data %>% mutate(pm2_5=na_interpolation(pm2_5))
+imputed<-na_interpolation(pm2_5_data$pm2_5)
+sum(is.na(imputed))
+pm2_5_data$pm2_5<-imputed
+sum(is.na(pm2_5_data$pm2_5))
+pm2_5_data %>% ggplot(aes(x=dateNew,y=pm2_5))+geom_line()+ggtitle("pm  2.5 concentration for code HK6")
+
+
+
+
+
+```
+
+
+since the pm2_5 data are measured only for 3 sites,extract data of those 3 sites 
+```{r}
+codes_to_filter<-c("HK6","HS4","WMD")
+pm2_5_data_for_codes <- london_air_data_new %>%
+  filter(code %in% codes_to_filter) %>%
+  select(code, date, pm2_5, dateNew, time)
+```
+
+missing values in pm2_5 data
+```{r}
+colSums(is.na(pm2_5_data_for_codes))
+```
+interpolate missing values and plot 
+
+```{r}
+data3<-pm2_5_data_for_codes %>%  
+  mutate(pm2_5_interpolate=na.approx(pm2_5))
+```
+#plot 4
+
+```{r}
+plot4_data<-data3 %>% group_by(dateNew) %>% 
+  summarise(avg_pm2.5=mean(pm2_5_interpolate)) 
+plot4_data%>% 
+  ggplot(aes(x=dateNew,y=avg_pm2.5))+geom_line(color="dark green")+ geom_point(data=plot4_data %>%
+               filter(avg_pm2.5 == max(avg_pm2.5, na.rm = TRUE)),
+             aes(x = dateNew, y = avg_pm2.5),
+             color = "red", size = 3) +
+  labs(x="Date",y="average(daily) pm2.5 concentration",subtitle = "average(daily) PM2.5 values throughout the year")
+```
+```{r}
+plot4_data %>% arrange(desc(avg_pm2.5)) %>% head(20)
+```
+2022-12-16 records the highest average pm2_5 concentration for the year which is slightly above the index
+
+plot for so2
+```{r}
+london_air_data_new %>% filter(!is.na(so2)) %>% distinct(code)
+```
+so2 paramter is measured only at site LB5
+
+```{r}
+so2_data_for_codes <- london_air_data_new %>%
+  filter(code == "LB5") %>%
+  select(code, date, so2, dateNew, time) 
+sum(is.na(so2_data_for_codes$so2))
+```
+there are 298 missing values, interpolate the missing values and plot
+
+#plot5
+
+```{r}
+plot5_data<-so2_data_for_codes %>%  
+  mutate(so2_interpolate=na.approx(so2)) %>% 
+  group_by(dateNew) %>% 
+  summarise(avg_daily_so2=mean(so2_interpolate)) 
+plot5_data%>% 
+  ggplot(aes(x=dateNew,y=avg_daily_so2))+geom_line()+labs(x="Date",y="average(daily) SO2 concentration",subtitle = "average(daily) SO2 values throughout the year")
+```
+```{r}
+plot5_data %>% arrange(desc(avg_daily_so2)) %>% head(10)
+```
+
+plot for o3
+```{r}
+codes_to_filter<-c("HK6","R12","SK6")
+o3_data_for_codes <- london_air_data_new %>%
+  filter(code %in% codes_to_filter) %>%
+  select(code, date, o3, dateNew, time)
+sum(is.na(o3_data_for_codes$o3))
+```
+```{r}
+plot6_data<-o3_data_for_codes %>%  
+  mutate(o3_interpolate=na.approx(o3)) %>% 
+  group_by(dateNew) %>% 
+  summarise(avg_daily_o3=mean(o3_interpolate))
+plot6_data%>% 
+  ggplot(aes(x=dateNew,y=avg_daily_o3))+geom_line(color="dark green")+
+  geom_point(data=plot6_data %>%
+               filter(avg_daily_o3 == max(avg_daily_o3)),
+             aes(x = dateNew, y = avg_daily_o3),
+             color = "red", size = 3) +
+  labs(x="Date",y="average(daily) O3 concentration",subtitle = "average(daily) O3 values throughout the year")
+```
+#spatial behaviour of pollutants
+Top 2 polluted cities with respect to No2
+```{r}
+mean_by_code<-london_air_data_new %>% 
+  group_by(code) %>% 
+  summarise(avg_no2_by_code=mean(no2,na.rm = T),
+            avg_no_by_code=mean(no,na.rm = T),
+            avg_nox_by_code=mean(nox,na.rm = T))
+
+
+```
+
+#plot7:NO2 levels in sites
+
+```{r}
+plot7<-mean_by_code %>% 
+  filter(!is.na(avg_no2_by_code)) %>%
+  ggplot(aes(x = reorder(code,-avg_no2_by_code),y=avg_no2_by_code,fill=code))+geom_bar(stat="identity")+coord_flip()+labs(x="site(codes)",y="average NO2 concentration",subtitle = "NO2 levels in sites(increasing order)")+guides(fill=F)
+plot7
+```
+#plot8:NO levels in sites
+
+```{r}
+plot8<-mean_by_code %>%
+  filter(!is.na(avg_no_by_code)) %>% 
+  ggplot(aes(x=reorder(code,-avg_no_by_code),y=avg_no_by_code,fill=code))+geom_bar(stat = "identity")+coord_flip()+theme_minimal()+labs(x="site(code)",y="average NO concentration",subtitle = "NO levels in sites(increasing order)")+guides(fill=F)
+plot8
+```
+```{r}
+grid.arrange(plot7, plot8, ncol=2)
+```
+
+
+```{r}
+mean_by_code %>% ggplot(aes(x=reorder(code, -avg_nox_by_code),y=avg_nox_by_code))+geom_bar(stat = "identity")+coord_flip()+theme_minimal()
+```
+#plot9 :pm 2.5 levels for sites
+
+```{r}
+plot9<-london_air_data_new %>%
+  group_by(code) %>% 
+  summarise(mean_pm2_5=mean(pm2_5,na.rm=T)) %>% 
+   filter(!is.na(mean_pm2_5)) %>% 
+  ggplot(aes(x=code,y=mean_pm2_5,fill=code))+geom_bar(stat="identity")+theme_minimal()+labs(x="site(code)",y="average PM2.5 concentration",subtitle = "PM2.5 levels in sites(increasing order)")
+plot9
+```
+```{r}
+plot10<-london_air_data_new %>% 
+  group_by(code) %>% 
+ summarise(avg_o3_by_code=mean(o3,na.rm=T)) %>% 
+   filter(!is.na(avg_o3_by_code)) %>% 
+  ggplot(aes(x=code,y=avg_o3_by_code,fill=code))+geom_bar(stat="identity")+theme_minimal()+
+  labs(x="site(code)",y="average O3 concentration",subtitle = "O3 levels in sites(increasing order)")
+plot10
+```
+```{r}
+pm10_data<-london_air_data_new %>% filter(!is.na(pm10)) %>% distinct(code)
+#codes_to_filter_pm10<-as.vector(pm10_data)
+
+
+pm10_data_for_codes <- london_air_data_new %>%
+  filter(code %in% pm10_data) %>%
+  select(code, date, pm10, dateNew, time)
+
+pm10_data_for_codes %>%
+  mutate(pm10_interpolate=na.approx(pm10)) %>% 
+  group_by(code) %>% 
+  summarise(avg_pm10_by_code=mean(pm10_interpolate)) %>% 
+  ggplot(aes(x=code,y=avg_pm10_by_code))+geom_bar(stat="identity")
+  
+  
+  
+  
+ 
+```
+
+lets take a closer look at WA7
+```{r}
+wa7_data<-london_air_data_new %>% 
+  group_by(code) %>% 
+ filter(code=="WA7") %>% 
+  select(code,date,dateNew,time,no2,pm10,pm2_5,no,nox)  
+ 
+ aggr(wa7_data)
+```
+```{r}
+
+```
+
+```{r}
+wa7_data_interpolated<-wa7_data %>%  
+  mutate(pm10_interpolate=na.approx(pm10)) %>% 
+  group_by(dateNew) %>% 
+  summarise(avg_daily_pm10=mean(pm10_interpolate)) 
+plot4<-wa7_data_interpolated%>% 
+  ggplot(aes(x=dateNew,y=avg_daily_pm10))+geom_line()+
+  geom_point(data=wa7_data_interpolated %>%
+               filter(avg_daily_pm10 == max(avg_daily_pm10, na.rm = TRUE)),
+             aes(x = dateNew, y = avg_daily_pm10),
+             color = "red", size = 3) 
+plot4
+
+
+```
+```{r}
+wa7_data_interpolated %>% arrange(desc(avg_daily_pm10)) %>% head(10)
+
+```
+```{r}
+wa7_data_interpolated %>%
+  mutate(prev_value = lag(avg_daily_pm10),
+         next_value = lead(avg_daily_pm10)) %>%
+  filter( avg_daily_pm10 > next_value) %>%
+  ggplot(aes(x = dateNew, y = avg_daily_pm10)) +
+  geom_line() +
+  geom_point(color = "red", size = 1) 
+```
+```{r}
+max_peak_value <- wa7_data_interpolated %>%
+  filter(avg_daily_pm10 == max(avg_daily_pm10, na.rm = TRUE)) %>%
+  pull(avg_daily_pm10)
+
+wa7_data_interpolated %>%
+  ggplot(aes(x = dateNew, y = avg_daily_pm10)) +
+  geom_line() +
+  geom_point(data = wa7_data_interpolated %>% filter(avg_daily_pm10 == max_peak_value),
+             aes(x = dateNew, y = avg_daily_pm10),
+             color = "red", size = 3) 
+```
+corelation matrix
+```{r}
+correlation_matrix <- cor(london_air_data_new[, c("no", "no2", "nox", "so2","pm2_5","pm10")], use = "pairwise.complete.obs")
+
+correlation_matrix[is.na(correlation_matrix)] <- 0
+correlation_matrix
+
+```
+```{r}
+color_palette <- colorRampPalette(c("#67001f", "#b2182b", "#d6604d", "#f4a582", "#fddbc7", "#f7f7f7", "#d1e5f0", "#92c5de", "#4393c3", "#2166ac", "#053061"))(18)
+
+
+corrplot(correlation_matrix, 
+         method = "color", 
+         col = color_palette,
+         type = "upper",  
+         addCoef.col = "white",  
+         tl.cex = 0.9,  
+        
+)
+```
+

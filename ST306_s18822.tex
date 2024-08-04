@@ -1,0 +1,251 @@
+\documentclass[]{article}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[table]{xcolor}
+\usepackage{colortbl}
+\usepackage[margin=1.5in]{geometry}
+\usepackage[authordate,backend=bibtex]{biblatex-chicago}
+\addbibresource{references.bib}
+
+
+%opening
+\title{ST306 - Mini Project Report}
+\author{S18822}
+
+\begin{document}
+
+\maketitle
+\section{Introduction}
+\indent Air pollution, is one of the outstanding health concerns in today’s world affecting both developed and developing countries at both social and economic level. It accounts for an estimated 6.7 million premature death annually worldwide and also a root cause for many diseases including heart disease, stroke, lung cancer, pneumonia, type 2 diabetes, neonatal disorders, mental health conditions and neurological impairment.
+
+Pollution often takes the form of chemical composition of particulate matter (PM2.5 and PM10), nitrogen oxide (NO), nitrogen dioxide ($NO_2$), sulfur dioxide ($SO_2$), carbon monoxide (CO), and ozone ($O_3$) where an air quality index (AQI) is a scale used to show how polluted the air is with these pollutants, along with the risks associated with each rating. These pollutants are released to atmosphere due to various activities such as domestic solid biomass energy use, exhaust and non–exhaust emissions from vehicles, industrial emissions, and burning of solid waste.
+
+This project aims to analyze and discover the trends in air quality across London city.
+
+\subsection{Description of DataSet}
+Two datasets named “london local data 2022” [dataset 1] and  “london local sites” [dataset 2] were provided for the project as csv files.\\
+
+The first dataset contains hourly measurement of $NO_2$, $NO$, $NO_x$, $O_3$, $SO_2$,$PM10$, $PM2.5$ collected at 34 air monitoring sites located in London from 01/01/2022 to 01/01/2023.
+ It had a size of 289,069 rows x 10 columns and contained following variables of importance.
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|c|c|}\hline
+		\textbf{Name} & \textbf{Description} \\\hline
+		site & name of the monitoring site the data 
+		was obtained from \\\hline
+		code & A unique identifier for the monitoring site the data 
+		was obtained from. \\\hline
+		date & The date and timestamp when the observation was 
+		made. \\\hline
+		no & The measured value of the $NO$ pollutant \\\hline
+		nox & The measured value of the $NO_x$ pollutant \\\hline
+		no2 & The measured value of the $NO_2$ pollutant \\\hline
+		pm10 & The measured value of the $PM10$ pollutant. \\\hline
+		o3 & The measured value of the $O_3$ pollutant. \\\hline
+		pm2\_5 & The measured value of the $PM2.5$ pollutant. \\\hline
+		so2 & The measured value of the $SO_2$ pollutant. \\\hline
+		
+	\end{tabular}
+	\caption{description of the fields for dataset 1}
+	\label{table_1}
+\end{table}
+ The details of each monitoring site are given in the second dataset which include the following variables.
+ \begin{table}[H]
+ 	\centering
+ 	\begin{tabular}{|c|c|}\hline
+ 		\textbf{Name} & \textbf{Description} \\\hline
+ 		site & name of the monitoring site  \\\hline
+ 		code & A unique identifier for the monitoring site . \\\hline
+ 		Latitude & Latitude of the site \\\hline
+ 		Longitude & Longitude of the site \\\hline
+ 		parameter name & name of the substance measured\\\hline
+ 	\end{tabular}
+ 	\caption{description of the fields for dataset 2}
+ 	\label{table_2}
+ \end{table}
+It is noted that not all monitoring sites measured all pollutants.The following table summarises the no.of monitoring sites that measured each pollutant.
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|c|c|c|c|c|c|c|c|}\hline
+		\textbf{Pollutant} & NOx & NOx & NO2 & PM10 & O3 & PM2.5 & SO2 \\\hline
+		\textbf{No. of Monitoring Sites} & 33 & 33 & 33 & 23 & 3 & 3 & 1 \\\hline
+	\end{tabular}
+	\caption{Number of monitoring sites considered for each pollutant measurement}
+	\label{table_3}
+\end{table}
+
+For the ease of the analysis, the date column in the dataset 1 was divided into two columns using \emph{mutate()} function to create two new variables for the date and time of the measurement .Thus the resulting dataset has 12 columns.
+ 
+ \subsection{Air quality Assessment}
+Air quality is assessed based on a banding system which measures the levels of pollutants such as Ozone ($O_3$), Nitrogen dioxide ($NO_2$) and Particulate matter ($PM10$ and $PM2.5$) . The overall air quality index at any particular time is given as the maximum band for any pollutant. 
+
+UK air quality banding system issued by the Committee on Medical Effects of Air Pollutants (COMEAP) specifies the following values for the different bands of pollutants.
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|c|c|c|c|c|c|}
+		\hline
+		\textbf{Band} & \textbf{Index} & \textbf{$O_3$} & \textbf{$NO_2$} & \textbf{$PM2.5$} & \textbf{$PM10$} \\
+		\hline
+		\rowcolor{green!40}Low & 1-3& 0-100 & 0-200 & 0-35 & 0-50\\
+		\hline
+		\rowcolor{yellow!40}Moderate & 4-6 & 101-160& 201-400 & 36-53 & 51-75 \\
+		\hline
+		\rowcolor{orange!40}High & 7-9 & 161-240 & 401-600 & 54-70 & 76-100 \\
+		\hline
+		\rowcolor{red!50}Very High & 10 & 241 or more & 601 or more & 71 or more & 101 or more \\
+		
+		\hline
+	\end{tabular}
+	\caption{air quality}
+	\label{table_airquality}
+\end{table}
+This index sets short-term thresholds for each of  main pollutants measured in the UK and grades current air quality into four ‘bands’; Low, Moderate, High and Very High. Each of these bands has separate ‘index’ levels to provide gradation between the bands.The index runs on a scale from 1-10
+\section{Literature Review}
+\textcite{Ninsiima2023} assessed the spatio–temporal trends in air quality in  Kampala City during January 2020 –June 2022 using PM2.5 concentrations.They used line graphs to visualize the trend of 24 hour average and hourly average PM 2.5 concentrations.The seasonal Mann–Kendall statistical test was applied to assess the significance of observed trends by quarterly periods.The findings in the study showed that air quality exceeds the WHO targeted safe level throughout the day, even during times of less traffic and economic activities in Kampala City.
+
+Regarding the studies focusing on air pollution and health effects in London, we should mention the study of \textcite{GilAlana2020} who examined the air quality in London by providing evidence of persistence, seasonality and time trends in various air quality pollutants using roadside and background standard air quality chemistry readings.The results of the study demonstrated a large degree of heterogeneity across pollutants and a persistent behavior based on a long memory  pattern practically in all cases. Seasonality and decreasing linear trends are  also found in some cases.
+
+\textcite{Sampath2019} analyzed and compared the performance of classification and regression in the field of air quality prediction.He experimented with several models which can predict PM2.5 levels using present and historical pollution data in combination with predicted weather data and their performance was successfully evaluated.The exploratory data analysis and feature engineering methods implemented for the prediction models revealed interesting correlations between weather and pollution data.Moreover,different approaches to handle null values yielded varied performance from each of the models.The study concluded that classifier models perform better for air quality prediction than regression model.
+
+\newpage
+\section{Results and Discussion}
+Figure \ref{figure 1} demonstrates the distribution of missing values for the numerical variables of the data set 1.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{figures/missing values.png}	
+	\caption{Proportion of missing values}
+	\label{figure 1}
+\end{figure}
+
+First, let us investigate  the \textbf{temporal behavior} of some air pollutants  across London city.
+\newline\newline
+Since the proportion of missing values for the parameters \texttt{nox},\texttt{no2} and \texttt{no} is less than 20\%, the missing values were removed to obtain the following time series visualizations for the 3 pollutants.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{plots/plot3.png}	
+	\caption{Average $NO_2$ distribution}
+	\label{plot 3}
+\end{figure}
+
+
+The trend of average $NO_2$ concentration in London city over the year doesn't indicate any significant increase or decrease, rather goes relatively stable overtime.
+The highest $NO_2$ concentration is recorded in month of January (2022-01-14) and some significant spikes  are recorded during the end of the year (in December) as well.
+Moreover,all values are below 200 thus signifying that the air quality with respect to  $NO_2$ is at a satisfactory level.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{plots/plot1.png}	
+	\caption{Average $NO$ distribution}
+	\label{plot 1}
+\end{figure}
+
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{plots/plot2_NOx.png}	
+	\caption{Average $NO_x$ distribution}
+	\label{plot 2}
+\end{figure}
+
+For the above plots in Figure \ref{plot 1} and \ref{plot 2} ,the highest concentration of the pollutant can be detected in the month of January(2022-01-14) and few more high concentrations in December.
+\newline
+\newline
+From figure \ref{figure 1}, we can see that columns like \texttt{O3}, \texttt{so2} and \texttt{pm25} have over 80\% missing values. This could be because all monitoring sites did not measure all pollutants of interest. In this analysis, for these pollutants,only the relevant sites are considered and missing values are imputed using interpolation.
+\newline
+
+
+PM2.5 refers to fine particles with a diameter of 2.5 micrometers or smaller. It is a critical measure of air pollution as these particles can penetrate deep into the respiratory system. 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{plots/plot4_pm2.5.png}	
+	\caption{Average $PM2.5$ distribution}
+	\label{plot 4}
+\end{figure}
+
+
+2022-12-16 records the highest average $PM2.5$ concentration for the year which pushes the level of concern to moderate which is still acceptable.However,adults and children with lung problems and heart problems might be at risk when engaging in strenuous physical activity,particularly outdoors.Moreover a slight increasing trend can also be observed.
+\pagebreak
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{plots/plot5.png}	
+	\caption{Average $SO_2$ distribution}
+	\label{plot 5}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{plots/plot6.png}	
+	\caption{Average $O_3$ distribution}
+	\label{plot 6}
+\end{figure}
+2022-06-17	records the highest $O_3$ concentration which falls to the moderate index of air quality risk where Adults and children with lung problems, and  heart condition might be at risk. Moreover a non linear trend in $O_3$ can be observed.\\
+\newline
+Now, let us take a look at most polluted sites with respect to some pollutants\\
+\pagebreak
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{plots/plot7and8.png}	
+	\caption{site-wide $NO_2$ and $NO$ pollution }
+	\label{plot 7}
+\end{figure}
+
+Wandsworth - Putney High Street(WA7) and Lambeth - Brixton Road(LB4) are top 2 polluted sites with respect to $NO_2$ where as WA7 and Ealing - Hanger Lane Gyratory(EA6) are the most polluted sites with respect to $NO$.\\
+ It is noted that Wandsworth - Putney High Street has recorded the highest concentration for both  $NO_2$ and $NO$.
+ 
+Let's take a closer look at the daily $PM10$ levels of Wandsworth - Putney High Street\\
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{plots/plot8.png}	
+	\caption{daily $PM10$ levels of Putney High Street}
+	\label{plot 8}
+\end{figure} 
+
+The plot indicates two time points which signifies a moderate the level of concern for air quality in March.\\
+
+The following plots shows the most pollutant site with respect to the pollutants $PM2.5$ and $O_3$
+  
+ 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{plots/plot9.png}	
+	\caption{site-wide $PM2.5$ pollution }
+	\label{plot 9}
+\end{figure}
+
+Out of the three sites which measured the  $PM2.5$ levels in lodon city,Hounslow Chiswick (HS4) site records the highest pollution with respect to $PM2.5$
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{plots/plot10.png}	
+	\caption{site-wide $O_3$ pollution }
+	\label{plot 10}
+\end{figure}
+Out of the three sites which measured the  $O_3$ levels in Lodon city,Richmond Upon Thames - Barnes Wetlands (RI2) site records the highest pollution with respect to $O_3$\\
+
+The following figure visualize the correlation between pollutants of interest in London city
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{figures/correlation matrix_fig2.png}	
+	\caption{correlation matrix of pollutants}
+	\label{correlation_matrix}
+\end{figure}
+
+we can observe that there is a strong positive correlation (Correlation Coefficient greater than 0.8) between the pairs $NO_x$ ,  $NO$ and  $NO_x$ ,  $NO_2$.This could be because they have the same sources of pollution which is primarily from combustion of fuel.
+Moreover, similar patterns observed for time series visualizations for these pollutants in figure \ref{plot 1} and figure \ref{plot 2} might also  be explained by this strong correlation. 
+
+\section{conclusion}
+when analyzing the temporal behavior of the pollutants, we observed that majority of high concentrations are reported in the days of months in January, March and December.\\
+According to \emph{IQAir} sources,most of London's air pollution comes from road transport, as well as domestic and commercial heating systems.Moreover the largest contributor of $PM2.5$ in cities is estimated to come from wood and coal heating.
+London's winter season typically happens November through February .During this time we could expect a surge in the use of domestic heating systems and hence a high emission of pollutants to the atmosphere.Therefore, this might be a reason for such patterns of high levels of pollutants across the city of London.
+\newline
+
+Furthermore,we observed that  Wandsworth - Putney High Street recorded the highest concentration for both  $NO_2$ and $NO$.\\
+One reason for this could be the bus fleet travelling along Putney High Street.As a result, it remains very congested with a stop-start traffic flow, which is affected by vehicles delivering to businesses in the High Street.Moreover, a study commissioned by the Wandsworth Council showed that the buses were responsible for over two thirds of oxides of nitrogen pollution.
+
+
+\end{document}
