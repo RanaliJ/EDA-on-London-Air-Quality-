@@ -3,4 +3,5 @@ conducted an exploratory data analysis on London's air quality using hourly poll
 - Temporal behavior of pollutants across different months
 - Identification of the most polluted sites in London
 - Correlation analysis among different pollutants
+  
 The findings highlighted significant pollution spikes during January and December, likely due to increased domestic heating and traffic congestion. The Wandsworth - Putney High Street area was identified as a critical pollution hotspot, mainly due to heavy bus traffic.
